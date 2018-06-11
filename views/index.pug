@@ -9,3 +9,5 @@ html(lang='en')
       input(type='submit', name='submit', value='Create clip')
       if link
         a(href=link) Download
+      else if err
+        span #{err} 

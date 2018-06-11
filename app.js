@@ -13,8 +13,28 @@ const storage = multer.diskStorage({
 
 // init upload
 const upload = multer({
-  storage: storage
+  storage: storage,
+  limits: {fileSize: 1000000 * 20 }, // filesize limited to 20MB
+  fileFilter: function(req, file, cb) {
+    checkFileType(file, cb);
+  }
 }).array('images', 12);
+
+// check file type
+function checkFileType(file, cb) {
+
+  // allowed extensions
+  const filetypes = /jpeg|jpg|png|gif/;
+
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = filetypes.test(file.mimetype);
+
+  if (mimetype && extname) {
+    return cb (null, true);
+  } else {
+    cb('Error: Images only');
+  }
+}
 
 // init app
 const app = express();
@@ -33,10 +53,11 @@ app.get('/', (req, res) => {
 });
 
 app.post('/', (req, res) => {
-  console.log('here')
   upload(req, res, (err) => {
     if (err) {
-      console.log(err)
+      res.render('index', {
+        err: err
+      });
     } else {
       let paths = req.files.map((file) => `${file.destination}${file.filename}`)
       console.log(paths)
