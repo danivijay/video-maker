@@ -1,0 +1,11 @@
+doctype html
+html(lang='en')
+  head
+    title video-maker
+    script(type='text/javascript').
+  body
+    form(action='/', method="post", enctype='multipart/form-data')
+      input(type='file', multiple='', name='images', value='Upload images')
+      input(type='submit', name='submit', value='Create clip')
+      if link
+        a(href=link) Download
