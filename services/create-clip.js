@@ -11,7 +11,7 @@ const createClip = function (clip, projectUrl) {
           .then(function(response) {
               // file uploaded and object created
               const fileUrl = JSON.parse(response).url;
-              console.log('Successfully created file: ' + fileUrl);
+              console.log('\n\ncreated file: ' + fileUrl);
 
               // now we need to add a clip which references this new File object
               const clipData = {
@@ -25,7 +25,7 @@ const createClip = function (clip, projectUrl) {
               };
               return API.httpPost('/clips/', clipData).then(function(response){
                   const clipUrl = JSON.parse(response).url;
-                  console.log('Successfully created clip: ' + clipUrl);
+                  console.log('\n\ncreated clip: ' + clipUrl);
                   resolve();
               });
           });

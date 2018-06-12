@@ -19,7 +19,6 @@
   },
   "homepage": "https://github.com/danivijay/video-maker#readme",
   "dependencies": {
-    "axios": "0.18.0",
     "bluebird": "3.5.1",
     "body-parser": "1.18.3",
     "express": "4.16.3",
