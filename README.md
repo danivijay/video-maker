@@ -4,6 +4,7 @@ Node.JS web app to join images to create videos.
 
 _Run project:_
 ```
+npm install
 npm start
 ```
 

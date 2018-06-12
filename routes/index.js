@@ -17,6 +17,7 @@ router.get('/', (req, res) => {
   res.render('index');
 });
 
+
 router.post('/', (req, res) => {
   let initRes = res;
   upload(req, res, (err) => {
@@ -38,24 +39,24 @@ router.post('/', (req, res) => {
         
         // create project
         API.httpPost('/projects/', projectData)
-          .then(res => {
-            projectUrl = JSON.parse(res).url;
+        .then(res => {
+          projectUrl = JSON.parse(res).url;
             projectId = JSON.parse(res).id;
-
+            
             console.log('Successfully created project: ' + projectUrl);
-
+            
             let promiseArray = [];
-
+            
             for (let i=0; paths.lenght<i; i++) {
               promiseArray.push(
                 createClip({
-                    "path": paths[i],
-                    "position": parseFloat(i*10),
-                    "end": parseFloat((i+1)*10)
+                  "path": paths[i],
+                  "position": parseFloat(i*10),
+                  "end": parseFloat((i+1)*10)
                 }, projectUrl));  
-            }
+              }
 
-            Promise.all(promiseArray).then(function(responseArray){
+              Promise.all(promiseArray).then(function(responseArray){
               // export as a new video
               exportData = {
                 "export_type": "video",
@@ -68,9 +69,9 @@ router.post('/', (req, res) => {
                 "json": '{}'
               };
               API.httpPost('/exports/', exportData)
-                .then(function(response){
-                  // create export
-                  var exportUrl = JSON.parse(response).url;
+              .then(function(response){
+                // create export
+                var exportUrl = JSON.parse(response).url;
                   exportId = JSON.parse(response).id;
                   console.log('Successfully created export: ' + exportUrl);
 
@@ -80,13 +81,14 @@ router.post('/', (req, res) => {
                       interval: 1000,
                       retries: 60*60*1000,
                       timeout: 2000
-                  })
-                  .then(function(exportOutputUrl) {
+                    })
+                    .then(function(exportOutputUrl) {
                     // ready to download
                     console.log('Download ' + exportOutputUrl);
                     request(exportOutputUrl).pipe(fs.createWriteStream('./public/downloads/Output-' + projectId + '.mp4'));
                     initRes.render('index', {
-                      link: exportOutputUrl
+                      link: exportOutputUrl,
+                      projectId: projectId
                     });
                   })
                   .catch(err=> {
@@ -100,9 +102,20 @@ router.post('/', (req, res) => {
           .catch(err => {
             console.log(err)
           }) 
-      }
+        }
     }
   })
+});
+
+router.get('/delete/:id', (req, res) => {
+  API.httpDelete(`/projects/${req.params.id}/`)
+    .then(res => {
+      console.log(res);
+    })
+    .catch(err => {
+      console.log(err);
+    })
+  res.render('index');
 });
 
 // support functions
@@ -111,17 +124,18 @@ function isExportCompleted() {
 
     API.httpGet('/exports/' + exportId + '/', {})
           .then(function(response) {
-              var exportStatus = JSON.parse(response).status;
+            var exportStatus = JSON.parse(response).status;
               var exportOutputUrl = JSON.parse(response).output;
               if (exportStatus == 'completed') {
-                  console.log('Export completed: ' + JSON.stringify(response));
+                console.log('Export completed: ' + JSON.stringify(response));
                   resolve(exportOutputUrl);
               }
-          })
+            })
           .catch(err => {
             console.log(err);
           });
   });
 }
+
 
 module.exports = router

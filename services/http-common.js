@@ -37,3 +37,15 @@ exports.httpGet = function(endpoint, data) {
       }
   });
 }
+
+exports.httpDelete = function(endpoint, data) {
+  // Prepare request object and GET data to OpenShot API
+  return request.delete(protocol + '://' + auth.user + ':' + auth.pass + '@' + server + endpoint, function (err, response, body) {
+      if (err) {
+          return err;
+      } else {
+          console.log(response.statusCode + ': ' + body);
+          return body;
+      }
+  });
+}

@@ -8,6 +8,9 @@ html(lang='en')
       input(type='file', multiple='', name='images', value='Upload images')
       input(type='submit', name='submit', value='Create clip')
       if link
+        span &nbsp;
         a(href=link) Download
+        span &nbsp;
+        a(href="/delete/"+projectId) Delete project
       else if err
         span #{err} 
