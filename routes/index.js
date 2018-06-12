@@ -8,6 +8,7 @@ const promisePoller = require('promise-poller').default;
 // policies
 const upload = require('../policies/fileupload');
 const API = require('../services/http-common');
+const createClip = require('../services/create-clip');
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res) => {
+  let initRes = res;
   upload(req, res, (err) => {
     if (err) {
       res.render('index', {
@@ -67,23 +69,30 @@ router.post('/', (req, res) => {
               };
               API.httpPost('/exports/', exportData)
                 .then(function(response){
-                  // export has been created and will begin processing soon
+                  // create export
                   var exportUrl = JSON.parse(response).url;
                   exportId = JSON.parse(response).id;
                   console.log('Successfully created export: ' + exportUrl);
 
-                  // poll until the export has finished
+                  // poll until the export finish
                   var poller = promisePoller({
                       taskFn: isExportCompleted,
                       interval: 1000,
                       retries: 60*60*1000,
                       timeout: 2000
-                  }).then(function(exportOutputUrl) {
-                      // New exported video is ready for download now
-                      console.log('Download ' + exportOutputUrl);
-                      request(exportOutputUrl).pipe(fs.createWriteStream('Output-' + projectId + '.mp4'));
-                  }).catch(err=> {
-                    console.log('-------err2-------',err)
+                  })
+                  .then(function(exportOutputUrl) {
+                    // ready to download
+                    console.log('Download ' + exportOutputUrl);
+                    request(exportOutputUrl).pipe(fs.createWriteStream('./public/downloads/Output-' + projectId + '.mp4'));
+                    initRes.render('index', {
+                      link: exportOutputUrl
+                    });
+                  })
+                  .catch(err=> {
+                    initRes.render('index', {
+                      err: "Unable to export"
+                    });
                   });
                 });
             });
@@ -97,7 +106,7 @@ router.post('/', (req, res) => {
 });
 
 // support functions
-function isExportCompleted(exportId) {
+function isExportCompleted() {
   return new Promise(function (resolve, error) {
 
     API.httpGet('/exports/' + exportId + '/', {})
@@ -110,41 +119,7 @@ function isExportCompleted(exportId) {
               }
           })
           .catch(err => {
-            console.log('-------err1-------', err);
-          });
-  });
-}
-
-function createClip(clip, projectUrl) {
-  // create new File object (and upload file from filesystem)
-  const fileData = {
-      'json': '{}',
-      'project': projectUrl,
-      'media': fs.createReadStream(clip.path)
-  };
-
-  return new Promise(function (resolve) {
-      API.httpPost('/files/', fileData)
-          .then(function(response) {
-              // file uploaded and object created
-              const fileUrl = JSON.parse(response).url;
-              console.log('Successfully created file: ' + fileUrl);
-
-              // now we need to add a clip which references this new File object
-              const clipData = {
-                  'file': fileUrl,
-                  'json': '{}',
-                  'position': clip.position || 0.0,
-                  'start': clip.start || 0.0,
-                  'end': clip.end || JSON.parse(response).json.duration,
-                  'layer': clip.layer || 0,
-                  'project': projectUrl
-              };
-              return API.httpPost('/clips/', clipData).then(function(response){
-                  const clipUrl = JSON.parse(response).url;
-                  console.log('Successfully created clip: ' + clipUrl);
-                  resolve();
-              });
+            console.log(err);
           });
   });
 }
